@@ -56,6 +56,49 @@
             image-rendering: pixelated;
             z-index: 999;
         }
+
+        #feed-bag {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            width: 64px;
+            height: 64px;
+            background-image: url('./assets/feed-bag.PNG');
+            background-size: contain;
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            cursor: pointer;
+            z-index: 1001;
+            transform: translateY(-50%);
+        }
+
+        #feed-bag:hover {
+            filter: brightness(1.2);
+        }
+
+        .feed {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-image: url('./assets/feed.PNG');
+            background-repeat: no-repeat;
+            background-position: 0px 0px;
+            image-rendering: pixelated;
+            z-index: 998;
+        }
+
+        .mouse-feed {
+            position: fixed;
+            width: 16px;
+            height: 16px;
+            background-image: url('./assets/feed.PNG');
+            background-repeat: no-repeat;
+            background-position: 0px 0px;
+            image-rendering: pixelated;
+            z-index: 1002;
+            pointer-events: none;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -64,10 +107,13 @@
         <ul>
             <li><a href="https://mombot.nekoweb.org/mosaic.html">mosaic</a></li>
             <li><a href="https://claude.ai/public/artifacts/96d08403-21a1-4bda-9a5e-943c7b514eb9">sledysxic</a></li>
-            <li><a href="https://archive.org/details/babettes-feast">good movie link to Babette's Feast</a></li>
+            <li><a href="https://archive.org/details/babettes-feast">good movie</a></li>
             <li><a href="https://www.cherokeedictionary.net/grammar">Cherokee dictionary</a></li>
         </ul>
     </div>
+
+    <div id="feed-bag" title="Click to get chicken feed"></div>
+    <div id="mouse-feed" class="mouse-feed"></div>
 
     <!-- Chickens will be created dynamically -->
 
@@ -94,6 +140,10 @@
                 this.facingRight = true;
                 this.jumpStartY = 0;
                 this.jumpProgress = 0;
+                this.targetFeed = null;
+                this.followingMouse = false;
+                this.normalVelocityX = this.velocityX;
+                this.normalVelocityY = this.velocityY;
 
                 this.animations = {
                     idle: { frames: [0, 1], speed: 500 },
@@ -147,6 +197,28 @@
                 }
 
                 if (this.isPecking) return;
+
+                // Check for mouse following behavior
+                if (feedSystem.hasMouseFood()) {
+                    this.checkMouseProximity();
+                }
+
+                // Handle feed targeting
+                if (this.targetFeed) {
+                    this.moveTowardFeed(deltaTime);
+                    return;
+                }
+
+                // Handle mouse following
+                if (this.followingMouse) {
+                    this.followMouse();
+                    return;
+                }
+
+                // Check for nearby feed if not already targeting one
+                if (!this.targetFeed) {
+                    this.checkForNearbyFeed();
+                }
 
                 // Handle idle timer first
                 if (this.isIdling) {
@@ -260,6 +332,119 @@
                 this.setAnimation('jumping');
             }
 
+            checkMouseProximity() {
+                const mousePos = feedSystem.getMousePosition();
+                const distance = Math.sqrt(
+                    Math.pow(this.x - mousePos.x, 2) +
+                    Math.pow(this.y - mousePos.y, 2)
+                );
+
+                if (distance <= 100 && !this.followingMouse) {
+                    this.followingMouse = true;
+                    this.isIdling = false;
+                } else if (distance > 150 && this.followingMouse) {
+                    this.followingMouse = false;
+                }
+            }
+
+            followMouse() {
+                const mousePos = feedSystem.getMousePosition();
+                const dx = mousePos.x - this.x;
+                const dy = mousePos.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 20) {
+                    this.velocityX = (dx / distance) * 1.5;
+                    this.velocityY = (dy / distance) * 1.5;
+
+                    // Update facing direction
+                    this.facingRight = this.velocityX > 0;
+
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    this.setAnimation('walking');
+                    this.updatePosition();
+                }
+            }
+
+            rushToFeed(feed) {
+                this.targetFeed = feed;
+                this.followingMouse = false;
+                this.isIdling = false;
+                this.isPecking = false;
+            }
+
+            moveTowardFeed(deltaTime) {
+                if (!this.targetFeed || !feedSystem.feeds.find(f => f.id === this.targetFeed.id)) {
+                    this.targetFeed = null;
+                    return;
+                }
+
+                const dx = this.targetFeed.x - this.x;
+                const dy = this.targetFeed.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance <= 20) {
+                    // At feed location, start pecking
+                    this.peckAtFeed();
+                } else {
+                    // Move toward feed
+                    this.velocityX = (dx / distance) * 2;
+                    this.velocityY = (dy / distance) * 2;
+
+                    // Update facing direction
+                    this.facingRight = this.velocityX > 0;
+
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+                    this.setAnimation('walking');
+                    this.updatePosition();
+                }
+            }
+
+            checkForNearbyFeed() {
+                let closestFeed = null;
+                let closestDistance = Infinity;
+                const radius = Math.min(window.innerWidth, window.innerHeight) / 4; // Smaller radius for continuous checking
+
+                feedSystem.feeds.forEach(feed => {
+                    const distance = Math.sqrt(
+                        Math.pow(this.x - feed.x, 2) +
+                        Math.pow(this.y - feed.y, 2)
+                    );
+
+                    if (distance <= radius && distance < closestDistance) {
+                        closestDistance = distance;
+                        closestFeed = feed;
+                    }
+                });
+
+                if (closestFeed) {
+                    this.rushToFeed(closestFeed);
+                }
+            }
+
+            peckAtFeed() {
+                if (!this.isPecking) {
+                    this.isPecking = true;
+                    this.setAnimation('pecking');
+
+                    // Consume feed
+                    const feedGone = feedSystem.consumeFeed(this.targetFeed.id);
+
+                    setTimeout(() => {
+                        this.isPecking = false;
+                        if (feedGone || Math.random() < 0.3) {
+                            // Feed is gone or chicken is satisfied
+                            this.targetFeed = null;
+                            this.velocityX = (Math.random() - 0.5) * 2;
+                            this.velocityY = (Math.random() - 0.5) * 2;
+                        }
+                        this.setAnimation('idle');
+                    }, 600);
+                }
+            }
+
             setupEventListeners() {
                 this.element.addEventListener('mouseenter', () => {
                     this.jump();
@@ -288,6 +473,124 @@
                 requestAnimationFrame(gameLoop);
             }
         }
+
+        // Feed system
+        class FeedSystem {
+            constructor() {
+                this.hasFood = false;
+                this.feeds = [];
+                this.mouseFeed = document.getElementById('mouse-feed');
+                this.feedBag = document.getElementById('feed-bag');
+                this.mouseX = 0;
+                this.mouseY = 0;
+
+                this.setupEventListeners();
+            }
+
+            setupEventListeners() {
+                // Feed bag click
+                this.feedBag.addEventListener('click', () => {
+                    this.hasFood = true;
+                    this.mouseFeed.style.display = 'block';
+                    document.body.style.cursor = 'none';
+                });
+
+                // Mouse movement tracking
+                document.addEventListener('mousemove', (e) => {
+                    this.mouseX = e.clientX;
+                    this.mouseY = e.clientY;
+                    if (this.hasFood) {
+                        this.mouseFeed.style.left = (e.clientX - 8) + 'px';
+                        this.mouseFeed.style.top = (e.clientY - 8) + 'px';
+                    }
+                });
+
+                // Screen click to place feed
+                document.addEventListener('click', (e) => {
+                    if (this.hasFood && !e.target.closest('#feed-bag') && !e.target.closest('.links-section')) {
+                        this.placeFeed(e.clientX, e.clientY);
+                        this.hasFood = false;
+                        this.mouseFeed.style.display = 'none';
+                        document.body.style.cursor = 'default';
+                    }
+                });
+            }
+
+            placeFeed(x, y) {
+                const feed = {
+                    x: x - 8,
+                    y: y - 8,
+                    element: document.createElement('div'),
+                    amount: 100,
+                    maxAmount: 100,
+                    id: Date.now()
+                };
+
+                feed.element.className = 'feed';
+                feed.element.style.left = feed.x + 'px';
+                feed.element.style.top = feed.y + 'px';
+                this.updateFeedSprite(feed);
+                document.body.appendChild(feed.element);
+                this.feeds.push(feed);
+
+                // Notify nearby chickens
+                this.notifyChickens(feed);
+            }
+
+            updateFeedSprite(feed) {
+                const percentage = feed.amount / feed.maxAmount;
+                let frameX = 0;
+
+                if (percentage > 0.66) {
+                    frameX = 0; // Full feed (sprite 1)
+                } else if (percentage > 0.33) {
+                    frameX = -16; // Half gone (sprite 2)
+                } else if (percentage > 0) {
+                    frameX = -32; // Almost gone (sprite 3)
+                }
+
+                feed.element.style.backgroundPosition = `${frameX}px 0px`;
+            }
+
+            notifyChickens(feed) {
+                const radius = Math.min(window.innerWidth, window.innerHeight) / 2;
+                chickens.forEach(chicken => {
+                    const distance = Math.sqrt(
+                        Math.pow(chicken.x - feed.x, 2) +
+                        Math.pow(chicken.y - feed.y, 2)
+                    );
+                    if (distance <= radius) {
+                        chicken.rushToFeed(feed);
+                    }
+                });
+            }
+
+            consumeFeed(feedId, amount = 10) {
+                const feed = this.feeds.find(f => f.id === feedId);
+                if (feed) {
+                    feed.amount -= amount;
+                    this.updateFeedSprite(feed);
+
+                    if (feed.amount <= 0) {
+                        feed.element.remove();
+                        this.feeds = this.feeds.filter(f => f.id !== feedId);
+                        return true; // Feed is gone
+                    }
+                }
+                return false;
+            }
+
+            getMousePosition() {
+                return { x: this.mouseX, y: this.mouseY };
+            }
+
+            hasMouseFood() {
+                return this.hasFood;
+            }
+        }
+
+        // Create feed system
+        const feedSystem = new FeedSystem();
 
         // Create 20 chickens
         const chickens = [];
