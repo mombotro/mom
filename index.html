@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>need more chickens</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #ffffff;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .links-section {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border: 1px solid #ccc;
+        }
+
+        .links-section h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .links-section ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .links-section li {
+            margin: 5px 0;
+        }
+
+        .links-section a {
+            color: #0000EE;
+            text-decoration: underline;
+        }
+
+        .links-section a:visited {
+            color: #551A8B;
+        }
+
+        .chicken {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background-image: url('./assets/chicken.PNG');
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <div class="links-section">
+        <h2>mom's stuff</h2>
+        <ul>
+            <li><a href="https://mombot.nekoweb.org/mosaic.html">mosaic</a></li>
+            <li><a href="https://claude.ai/public/artifacts/96d08403-21a1-4bda-9a5e-943c7b514eb9">sledysxic</a></li>
+            <li><a href="https://archive.org/details/babettes-feast">good movie link to Babette's Feast</a></li>
+            <li><a href="https://www.cherokeedictionary.net/grammar">Cherokee dictionary</a></li>
+        </ul>
+    </div>
+
+    <!-- Chickens will be created dynamically -->
+
+    <script>
+        class Chicken {
+            constructor(id) {
+                this.element = document.createElement('div');
+                this.element.className = 'chicken';
+                this.element.id = 'chicken-' + id;
+                document.body.appendChild(this.element);
+                this.x = Math.random() * (window.innerWidth - 32);
+                this.y = Math.random() * (window.innerHeight - 32);
+                this.velocityX = (Math.random() - 0.5) * 2;
+                this.velocityY = (Math.random() - 0.5) * 2;
+                this.currentFrame = 0;
+                this.frameTime = 0;
+                this.animationSpeed = 200;
+                this.currentAnimation = 'idle';
+                this.isJumping = false;
+                this.jumpTime = 0;
+                this.isPecking = false;
+                this.isIdling = false;
+                this.idleTimer = 0;
+                this.facingRight = true;
+                this.jumpStartY = 0;
+                this.jumpProgress = 0;
+
+                this.animations = {
+                    idle: { frames: [0, 1], speed: 500 },
+                    walking: { frames: [2, 3, 4, 5], speed: 150 },
+                    pecking: { frames: [6, 7], speed: 300 },
+                    jumping: { frames: [8, 9], speed: 100 }
+                };
+
+                this.updatePosition();
+                this.setupEventListeners();
+                this.animate();
+            }
+
+            updatePosition() {
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+            }
+
+            updateSprite() {
+                const frameX = this.currentFrame * 32;
+                this.element.style.backgroundPosition = `-${frameX}px 0px`;
+                this.element.style.transform = this.facingRight ? 'scaleX(-1)' : 'scaleX(1)';
+            }
+
+            setAnimation(animName) {
+                if (this.currentAnimation !== animName) {
+                    this.currentAnimation = animName;
+                    this.currentFrame = this.animations[animName].frames[0];
+                    this.frameTime = 0;
+                }
+            }
+
+            updateAnimation(deltaTime) {
+                const anim = this.animations[this.currentAnimation];
+                this.frameTime += deltaTime;
+
+                if (this.frameTime >= anim.speed) {
+                    this.frameTime = 0;
+                    const currentFrameIndex = anim.frames.indexOf(this.currentFrame);
+                    const nextFrameIndex = (currentFrameIndex + 1) % anim.frames.length;
+                    this.currentFrame = anim.frames[nextFrameIndex];
+                }
+
+                this.updateSprite();
+            }
+
+            wander(deltaTime) {
+                if (this.isJumping) {
+                    this.updateJump(deltaTime);
+                    return;
+                }
+
+                if (this.isPecking) return;
+
+                // Handle idle timer first
+                if (this.isIdling) {
+                    this.idleTimer += deltaTime;
+                    if (this.idleTimer >= this.idleDuration) {
+                        this.isIdling = false;
+                        this.idleTimer = 0;
+                        // Start moving again with new random velocity
+                        this.velocityX = (Math.random() - 0.5) * 2;
+                        this.velocityY = (Math.random() - 0.5) * 2;
+                        // Ensure they actually move by giving minimum velocity
+                        if (Math.abs(this.velocityX) < 0.5) {
+                            this.velocityX = this.velocityX >= 0 ? 0.5 : -0.5;
+                        }
+                        if (Math.abs(this.velocityY) < 0.5) {
+                            this.velocityY = this.velocityY >= 0 ? 0.5 : -0.5;
+                        }
+                        // Don't return here - let them start moving immediately
+                    } else {
+                        return; // Only return if still idling
+                    }
+                }
+
+                // Change direction occasionally
+                if (Math.random() < 0.01) {
+                    this.velocityX = (Math.random() - 0.5) * 2;
+                    this.velocityY = (Math.random() - 0.5) * 2;
+                }
+
+                // Start pecking (stops movement)
+                if (Math.random() < 0.005) {
+                    this.isPecking = true;
+                    this.setAnimation('pecking');
+                    setTimeout(() => {
+                        this.isPecking = false;
+                        if (!this.isJumping && !this.isIdling) {
+                            this.setAnimation(Math.abs(this.velocityX) + Math.abs(this.velocityY) > 0.1 ? 'walking' : 'idle');
+                        }
+                    }, 600);
+                    return;
+                }
+
+                // Start idle (stops movement)
+                if (Math.random() < 0.003) {
+                    this.isIdling = true;
+                    this.idleTimer = 0;
+                    this.idleDuration = 1000 + Math.random() * 4000; // Random idle time 1-5 seconds
+                    this.setAnimation('idle');
+                    return;
+                }
+
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                // Update facing direction
+                if (this.velocityX > 0.1) {
+                    this.facingRight = true;
+                } else if (this.velocityX < -0.1) {
+                    this.facingRight = false;
+                }
+
+                // Boundary collision
+                if (this.x <= 0 || this.x >= window.innerWidth - 32) {
+                    this.velocityX = -this.velocityX;
+                    this.x = Math.max(0, Math.min(window.innerWidth - 32, this.x));
+                    this.facingRight = this.velocityX > 0;
+                }
+                if (this.y <= 0 || this.y >= window.innerHeight - 32) {
+                    this.velocityY = -this.velocityY;
+                    this.y = Math.max(0, Math.min(window.innerHeight - 32, this.y));
+                }
+
+                const isMoving = Math.abs(this.velocityX) + Math.abs(this.velocityY) > 0.1;
+                this.setAnimation(isMoving ? 'walking' : 'idle');
+
+                this.updatePosition();
+            }
+
+            updateJump(deltaTime) {
+                this.jumpProgress += deltaTime / 800; // 800ms jump duration
+
+                if (this.jumpProgress >= 1) {
+                    this.isJumping = false;
+                    this.jumpProgress = 0;
+                    this.setAnimation(Math.abs(this.velocityX) + Math.abs(this.velocityY) > 0.1 ? 'walking' : 'idle');
+                    return;
+                }
+
+                // Arc calculation: parabolic movement
+                const jumpHeight = 60 * Math.sin(this.jumpProgress * Math.PI);
+                const jumpDistance = 40 * this.jumpProgress;
+
+                this.y = this.jumpStartY - jumpHeight;
+                this.x += (this.facingRight ? jumpDistance : -jumpDistance) / 20; // Spread movement over time
+
+                // Boundary check during jump
+                this.x = Math.max(0, Math.min(window.innerWidth - 32, this.x));
+                this.y = Math.max(0, Math.min(window.innerHeight - 32, this.y));
+
+                this.updatePosition();
+            }
+
+            jump() {
+                if (this.isJumping || this.isPecking) return;
+
+                this.isJumping = true;
+                this.isPecking = false;
+                this.isIdling = false;
+                this.jumpStartY = this.y;
+                this.jumpProgress = 0;
+                this.setAnimation('jumping');
+            }
+
+            setupEventListeners() {
+                this.element.addEventListener('mouseenter', () => {
+                    this.jump();
+                });
+
+                window.addEventListener('resize', () => {
+                    this.x = Math.min(this.x, window.innerWidth - 32);
+                    this.y = Math.min(this.y, window.innerHeight - 32);
+                    this.updatePosition();
+                });
+            }
+
+            animate() {
+                let lastTime = 0;
+
+                const gameLoop = (currentTime) => {
+                    const deltaTime = currentTime - lastTime;
+                    lastTime = currentTime;
+
+                    this.updateAnimation(deltaTime);
+                    this.wander(deltaTime);
+
+                    requestAnimationFrame(gameLoop);
+                };
+
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Create 20 chickens
+        const chickens = [];
+        for (let i = 0; i < 20; i++) {
+            chickens.push(new Chicken(i));
+        }
+    </script>
+</body>
+</html>
