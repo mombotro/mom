@@ -1,0 +1,13 @@
+{
+  "chapters": [
+    {
+      "number": 1,
+      "title": "Getting Started",
+      "slug": "ch1",
+      "publishDate": "2026-01-04",
+      "pages": [
+        { "file": "placeholder.jpg", "alt": "Placeholder page - Add your comic pages here!" }
+      ]
+    }
+  ]
+}

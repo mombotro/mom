@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chicken Coop - Comics & Webcomics</title>
+    <link rel="stylesheet" href="css/archive.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <a href="../../index.html" class="back-link">← Back to Farm</a>
+            <h1 class="title">🐔 CHICKEN COOP</h1>
+            <p class="subtitle">Comics & Webcomics</p>
+        </header>
+
+        <div id="loading" class="loading">Loading comics...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="series-grid" class="series-grid"></div>
+    </div>
+
+    <script src="js/ComicData.js"></script>
+    <script src="js/ComicArchive.js"></script>
+    <script>
+        // Initialize archive page
+        const archive = new ComicArchive();
+        archive.init();
+    </script>
+</body>
+</html>

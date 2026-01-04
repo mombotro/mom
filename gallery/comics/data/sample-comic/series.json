@@ -1,0 +1,11 @@
+{
+  "slug": "sample-comic",
+  "title": "Sample Comic",
+  "author": "mombot",
+  "description": "This is a sample comic to demonstrate the reader. Replace this with your own comics!",
+  "status": "ongoing",
+  "defaultMode": "webtoon",
+  "readerModes": ["webtoon", "paged"],
+  "startDate": "2026-01-04",
+  "tags": ["sample", "demo"]
+}

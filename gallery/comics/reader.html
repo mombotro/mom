@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Comic Reader</title>
+    <link rel="stylesheet" href="css/reader.css">
+</head>
+<body>
+    <!-- Fixed Header -->
+    <header class="reader-header">
+        <div class="header-left">
+            <a href="index.html" class="back-btn" title="Back to Archive">← Archive</a>
+            <div class="reader-title">
+                <span id="series-title">Loading...</span>
+                <span class="chapter-subtitle" id="chapter-title"></span>
+            </div>
+        </div>
+        <div class="header-right">
+            <button id="mode-toggle-btn" class="btn" title="Toggle Reader Mode (M)">
+                <span id="mode-icon">📖</span> <span id="mode-text">Paged</span>
+            </button>
+            <button id="menu-toggle-btn" class="btn" title="Chapter Menu (C)">≡ Menu</button>
+        </div>
+    </header>
+
+    <!-- Main Reader Container -->
+    <div id="reader-container" class="reader-container webtoon">
+        <div id="loading" class="loading">Loading comic...</div>
+        <div id="error" class="error" style="display: none;"></div>
+    </div>
+
+    <!-- Bottom Navigation (Paged Mode Only) -->
+    <nav id="page-nav" class="page-nav" style="display: none;">
+        <button id="prev-btn" class="nav-btn" title="Previous Page (←)">← PREV</button>
+        <div class="page-counter">
+            <span id="current-page">1</span> / <span id="total-pages">1</span>
+        </div>
+        <button id="next-btn" class="nav-btn" title="Next Page (→)">NEXT →</button>
+    </nav>
+
+    <!-- Chapter Menu Sidebar -->
+    <aside id="chapter-menu" class="chapter-menu">
+        <div class="menu-header">
+            <h2>Chapters</h2>
+            <button id="menu-close-btn" class="close-btn">✕</button>
+        </div>
+        <div id="chapter-list" class="chapter-list">
+            <!-- Chapters will be populated here -->
+        </div>
+    </aside>
+
+    <!-- Overlay for menu -->
+    <div id="menu-overlay" class="menu-overlay"></div>
+
+    <script src="js/ComicData.js"></script>
+    <script src="js/ComicReader.js"></script>
+    <script>
+        // Initialize reader
+        const reader = new ComicReader();
+        reader.init();
+    </script>
+</body>
+</html>

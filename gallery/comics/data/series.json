@@ -1,0 +1,12 @@
+{
+  "series": [
+    {
+      "slug": "sample-comic",
+      "title": "Sample Comic",
+      "description": "A sample comic to test the reader. Add your own comics by creating new folders in the data directory!",
+      "coverImage": "data/sample-comic/cover.jpg",
+      "status": "ongoing",
+      "defaultMode": "webtoon"
+    }
+  ]
+}

@@ -1,0 +1,442 @@
+/* Reader Page Styles - Dual Mode Support */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: monospace;
+    background: #fffef7;
+    overflow-x: hidden;
+}
+
+/* ===== HEADER ===== */
+.reader-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 254, 247, 0.98);
+    border-bottom: 2px dashed #8B4513;
+    padding: 12px 20px;
+    z-index: 1000;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(139, 69, 19, 0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex: 1;
+}
+
+.header-right {
+    display: flex;
+    gap: 10px;
+}
+
+.back-btn {
+    color: #8B4513;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 2px dashed #8B4513;
+    background: rgba(139, 69, 19, 0.05);
+    transition: all 0.3s ease;
+    font-size: 13px;
+}
+
+.back-btn:hover {
+    background: rgba(139, 69, 19, 0.15);
+}
+
+.reader-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#series-title {
+    color: #8B4513;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.chapter-subtitle {
+    color: #666;
+    font-size: 12px;
+}
+
+.btn {
+    background: #8B4513;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 13px;
+    transition: background 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: #654321;
+}
+
+#mode-icon {
+    font-size: 14px;
+}
+
+/* ===== READER CONTAINER ===== */
+.reader-container {
+    margin-top: 60px;
+    min-height: calc(100vh - 60px);
+}
+
+.loading, .error {
+    text-align: center;
+    padding: 60px 20px;
+    font-size: 16px;
+    color: #8B4513;
+}
+
+.error {
+    color: #a94442;
+    border: 2px dashed #a94442;
+    background: rgba(169, 68, 66, 0.1);
+    max-width: 600px;
+    margin: 60px auto;
+}
+
+/* ===== WEBTOON MODE ===== */
+.reader-container.webtoon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding-bottom: 40px;
+}
+
+.reader-container.webtoon .comic-page {
+    max-width: 800px;
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* ===== PAGED MODE ===== */
+.reader-container.paged {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 70px;
+    padding: 20px;
+}
+
+.reader-container.paged .comic-page {
+    max-width: 95vw;
+    max-height: calc(100vh - 200px);
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    display: block;
+}
+
+.comic-page {
+    cursor: pointer;
+    user-select: none;
+}
+
+/* ===== PAGE NAVIGATION (Paged Mode) ===== */
+.page-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 254, 247, 0.98);
+    border-top: 2px dashed #8B4513;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 1000;
+    box-shadow: 0 -2px 4px rgba(139, 69, 19, 0.1);
+}
+
+.nav-btn {
+    background: #8B4513;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-family: monospace;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background 0.3s ease;
+}
+
+.nav-btn:hover:not(:disabled) {
+    background: #654321;
+}
+
+.nav-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.page-counter {
+    font-family: monospace;
+    color: #8B4513;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* ===== CHAPTER MENU SIDEBAR ===== */
+.menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    display: none;
+}
+
+.menu-overlay.active {
+    display: block;
+}
+
+.chapter-menu {
+    position: fixed;
+    top: 0;
+    right: -400px;
+    width: 400px;
+    height: 100vh;
+    background: #fffef7;
+    border-left: 3px dashed #8B4513;
+    transition: right 0.3s ease;
+    z-index: 2000;
+    overflow-y: auto;
+    box-shadow: -4px 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.chapter-menu.open {
+    right: 0;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 2px dashed #8B4513;
+    position: sticky;
+    top: 0;
+    background: #fffef7;
+    z-index: 1;
+}
+
+.menu-header h2 {
+    margin: 0;
+    color: #8B4513;
+    font-size: 20px;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #8B4513;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+}
+
+.close-btn:hover {
+    color: #654321;
+}
+
+.chapter-list {
+    padding: 20px;
+}
+
+.chapter-item {
+    border: 2px dashed #8B4513;
+    padding: 15px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    background: rgba(139, 69, 19, 0.05);
+    transition: all 0.3s ease;
+}
+
+.chapter-item:hover {
+    background: rgba(139, 69, 19, 0.15);
+    transform: translateX(-5px);
+}
+
+.chapter-item.current {
+    background: rgba(139, 69, 19, 0.2);
+    border-style: solid;
+}
+
+.chapter-item h3 {
+    margin: 0 0 5px 0;
+    color: #8B4513;
+    font-size: 16px;
+}
+
+.chapter-item p {
+    margin: 0;
+    color: #666;
+    font-size: 12px;
+}
+
+/* ===== TAP ZONES (Mobile Navigation) ===== */
+.tap-zone {
+    position: fixed;
+    top: 60px;
+    bottom: 70px;
+    width: 33%;
+    z-index: 500;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tap-zone.left {
+    left: 0;
+}
+
+.tap-zone.right {
+    right: 0;
+}
+
+.tap-zone:active {
+    opacity: 0.1;
+    background: #8B4513;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .reader-header {
+        padding: 10px 12px;
+        flex-wrap: wrap;
+    }
+
+    .header-left, .header-right {
+        flex-wrap: wrap;
+    }
+
+    #series-title {
+        font-size: 14px;
+    }
+
+    .chapter-subtitle {
+        font-size: 11px;
+    }
+
+    .btn, .back-btn {
+        font-size: 12px;
+        padding: 6px 10px;
+    }
+
+    #mode-text {
+        display: none;
+    }
+
+    .chapter-menu {
+        width: 100%;
+        right: -100%;
+    }
+
+    .reader-container.webtoon .comic-page {
+        max-width: 100%;
+    }
+
+    .reader-container.paged .comic-page {
+        max-height: calc(100vh - 180px);
+    }
+
+    .page-nav {
+        padding: 12px 10px;
+    }
+
+    .nav-btn {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .page-counter {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .reader-header {
+        padding: 8px 10px;
+    }
+
+    .header-left {
+        gap: 8px;
+    }
+
+    .header-right {
+        gap: 6px;
+    }
+
+    #series-title {
+        font-size: 13px;
+    }
+
+    .btn, .back-btn {
+        font-size: 11px;
+        padding: 6px 8px;
+    }
+
+    .reader-container.webtoon {
+        gap: 0;
+    }
+
+    .reader-container.paged .comic-page {
+        max-height: calc(100vh - 160px);
+    }
+
+    .page-nav {
+        padding: 10px 8px;
+    }
+
+    .nav-btn {
+        padding: 8px 10px;
+        font-size: 11px;
+    }
+
+    .menu-header {
+        padding: 15px;
+    }
+
+    .chapter-list {
+        padding: 15px;
+    }
+}
+
+/* ===== UTILITIES ===== */
+.hidden {
+    display: none !important;
+}
+
+/* Prevent text selection when rapidly clicking */
+body.reading {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+}
