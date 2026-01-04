@@ -1,0 +1,12 @@
+{
+  "input": "./source/tools",
+  "output": "./gallery/tools",
+  "title": "Little Programs & Tools",
+  "theme": "cards",
+  "sort-albums-by": "date",
+  "sort-media-by": "date",
+  "thumb-size": 200,
+  "large-size": 1500,
+  "photo-quality": 90,
+  "cleanup": true
+}

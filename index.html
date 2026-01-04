@@ -108,6 +108,16 @@
             box-sizing: border-box;
             font-family: monospace;
             z-index: 500;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .farm-building:hover {
+            background: rgba(139, 69, 19, 0.2);
+            border-color: #654321;
+            transform: scale(1.05);
         }
 
         .farm-building h3 {
@@ -124,11 +134,21 @@
             font-style: italic;
         }
 
+        .farm-building.coming-soon {
+            opacity: 0.6;
+            cursor: default;
+        }
+
+        .farm-building.coming-soon:hover {
+            transform: none;
+            background: rgba(139, 69, 19, 0.1);
+        }
+
         /* Individual building positions */
         #farmhouse {
             top: 50px;
             left: 50%;
-            transform: translateX(-50%);
+            margin-left: -90px;
             width: 180px;
             height: 120px;
         }
@@ -184,29 +204,31 @@
     <div id="mouse-feed" class="mouse-feed"></div>
 
     <!-- Farm Buildings -->
-    <div id="farmhouse" class="farm-building">
+    <div id="farmhouse" class="farm-building coming-soon">
         <h3>🏠 FARMHOUSE</h3>
         <p>About/Contact</p>
+        <p style="margin-top: 10px; font-size: 10px;">(coming soon)</p>
     </div>
 
-    <div id="chicken-coop" class="farm-building">
+    <a id="chicken-coop" class="farm-building" href="./gallery/comics/">
         <h3>🐔 CHICKEN COOP</h3>
         <p>Comics/Webcomics</p>
-    </div>
+    </a>
 
-    <div id="workshop" class="farm-building">
+    <a id="workshop" class="farm-building" href="./gallery/tools/">
         <h3>🔨 WORKSHOP</h3>
         <p>Little Programs & Tools</p>
-    </div>
+    </a>
 
-    <div id="garden" class="farm-building">
+    <a id="garden" class="farm-building" href="./gallery/projects/">
         <h3>🌱 GARDEN</h3>
         <p>3D Printing & Embroidery</p>
-    </div>
+    </a>
 
-    <div id="farm-stand" class="farm-building">
+    <div id="farm-stand" class="farm-building coming-soon">
         <h3>🛒 FARM STAND</h3>
         <p>Stores & Links</p>
+        <p style="margin-top: 10px; font-size: 10px;">(coming soon)</p>
     </div>
 
     <!-- Chickens will be created dynamically -->

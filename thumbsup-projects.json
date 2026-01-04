@@ -1,0 +1,12 @@
+{
+  "input": "./source/projects",
+  "output": "./gallery/projects",
+  "title": "3D Printing & Embroidery Projects",
+  "theme": "cards",
+  "sort-albums-by": "date",
+  "sort-media-by": "date",
+  "thumb-size": 200,
+  "large-size": 1500,
+  "photo-quality": 90,
+  "cleanup": true
+}
