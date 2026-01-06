@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - chicken flew the coop</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #ffffff;
+            font-family: monospace;
+            font-size: 14px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+        }
+
+        h1 {
+            font-size: 72px;
+            margin: 0 0 20px 0;
+            color: #8B4513;
+        }
+
+        h2 {
+            font-size: 24px;
+            margin: 0 0 30px 0;
+            color: #666;
+            font-weight: normal;
+        }
+
+        p {
+            margin: 20px 0;
+            color: #666;
+            line-height: 1.6;
+        }
+
+        a {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: rgba(139, 69, 19, 0.1);
+            border: 2px solid #8B4513;
+            color: #8B4513;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            background: rgba(139, 69, 19, 0.2);
+            transform: scale(1.05);
+        }
+
+        .chicken {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background-image: url('./assets/chicken.PNG');
+            background-repeat: no-repeat;
+            image-rendering: pixelated;
+            z-index: 1;
+        }
+
+        .fence {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            border-top: 3px dashed #8B4513;
+            opacity: 0.3;
+        }
+
+        .fence::before,
+        .fence::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 60px;
+            background: #8B4513;
+            bottom: 0;
+        }
+
+        .fence::before {
+            left: 20%;
+        }
+
+        .fence::after {
+            right: 20%;
+        }
+    </style>
+</head>
+<body>
+    <div class="fence"></div>
+
+    <div class="container">
+        <h1>404</h1>
+        <h2>chicken flew the coop</h2>
+        <p>Looks like this page wandered off into the tall grass.</p>
+        <p>Maybe a fox got it. Or it's just pecking around somewhere else.</p>
+        <a href="/">return to the farm</a>
+    </div>
+
+    <script>
+        // Create a few wandering chickens
+        class LostChicken {
+            constructor(id) {
+                this.element = document.createElement('div');
+                this.element.className = 'chicken';
+                document.body.appendChild(this.element);
+
+                this.x = Math.random() * (window.innerWidth - 32);
+                this.y = Math.random() * (window.innerHeight - 32);
+                this.velocityX = (Math.random() - 0.5) * 1.5;
+                this.velocityY = (Math.random() - 0.5) * 1.5;
+                this.currentFrame = 0;
+                this.frameTime = 0;
+                this.facingRight = this.velocityX > 0;
+
+                this.updatePosition();
+                this.animate();
+            }
+
+            updatePosition() {
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+            }
+
+            updateSprite() {
+                const frameX = this.currentFrame * 32;
+                this.element.style.backgroundPosition = `-${frameX}px 0px`;
+                this.element.style.transform = this.facingRight ? 'scaleX(-1)' : 'scaleX(1)';
+            }
+
+            wander() {
+                this.x += this.velocityX;
+                this.y += this.velocityY;
+
+                // Update facing direction
+                if (this.velocityX > 0.1) {
+                    this.facingRight = true;
+                } else if (this.velocityX < -0.1) {
+                    this.facingRight = false;
+                }
+
+                // Boundary collision
+                if (this.x <= 0 || this.x >= window.innerWidth - 32) {
+                    this.velocityX = -this.velocityX;
+                    this.x = Math.max(0, Math.min(window.innerWidth - 32, this.x));
+                    this.facingRight = this.velocityX > 0;
+                }
+                if (this.y <= 0 || this.y >= window.innerHeight - 32) {
+                    this.velocityY = -this.velocityY;
+                    this.y = Math.max(0, Math.min(window.innerHeight - 32, this.y));
+                }
+
+                // Change direction occasionally
+                if (Math.random() < 0.02) {
+                    this.velocityX = (Math.random() - 0.5) * 1.5;
+                    this.velocityY = (Math.random() - 0.5) * 1.5;
+                }
+
+                this.updatePosition();
+            }
+
+            animate() {
+                let lastTime = 0;
+
+                const gameLoop = (currentTime) => {
+                    const deltaTime = currentTime - lastTime;
+                    lastTime = currentTime;
+
+                    // Animate sprite frames
+                    this.frameTime += deltaTime;
+                    if (this.frameTime >= 200) {
+                        this.frameTime = 0;
+                        this.currentFrame = (this.currentFrame + 1) % 4 + 2; // Use walking frames 2-5
+                    }
+
+                    this.updateSprite();
+                    this.wander();
+
+                    requestAnimationFrame(gameLoop);
+                };
+
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Create 5 lost chickens wandering around
+        const lostChickens = [];
+        for (let i = 0; i < 5; i++) {
+            lostChickens.push(new LostChicken(i));
+        }
+    </script>
+</body>
+</html>
