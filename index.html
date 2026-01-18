@@ -47,6 +47,69 @@
             color: #551A8B;
         }
 
+        .telegram-feed {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border: 1px solid #ccc;
+            max-height: 200px;
+            max-width: 350px;
+            overflow-y: auto;
+        }
+
+        .telegram-feed h2 {
+            margin: 0 0 10px 0;
+            font-size: 16px;
+        }
+
+        .telegram-feed ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .telegram-feed li {
+            margin: 8px 0;
+            padding-bottom: 8px;
+            border-bottom: 1px dotted #ccc;
+        }
+
+        .telegram-feed li:last-child {
+            border-bottom: none;
+        }
+
+        .telegram-feed .post-time {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .telegram-feed .post-content {
+            margin-top: 4px;
+        }
+
+        .telegram-feed .post-images {
+            margin-top: 6px;
+        }
+
+        .telegram-feed .post-images img {
+            max-width: 100%;
+            max-height: 150px;
+            margin: 2px;
+            border: 1px solid #ddd;
+        }
+
+        .telegram-feed a {
+            color: #0000EE;
+            text-decoration: underline;
+        }
+
+        .telegram-feed a:visited {
+            color: #551A8B;
+        }
+
         .chicken {
             position: absolute;
             width: 32px;
@@ -98,6 +161,28 @@
             z-index: 1002;
             pointer-events: none;
             display: none;
+        }
+
+        .chick {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-image: url('./assets/chick.PNG');
+            background-repeat: no-repeat;
+            background-position: 0px 0px;
+            image-rendering: pixelated;
+            z-index: 999;
+        }
+
+        .egg {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background-image: url('./assets/egg.PNG');
+            background-repeat: no-repeat;
+            background-position: 0px 0px;
+            image-rendering: pixelated;
+            z-index: 998;
         }
 
         .farm-building {
@@ -200,6 +285,13 @@
         </ul>
     </div>
 
+    <div class="telegram-feed">
+        <h2><a href="https://t.me/mombotpro" target="_blank">tg feed</a></h2>
+        <ul id="telegram-posts">
+            <li>Loading...</li>
+        </ul>
+    </div>
+
     <div id="feed-bag" title="Click to get chicken feed"></div>
     <div id="mouse-feed" class="mouse-feed"></div>
 
@@ -234,6 +326,46 @@
     <!-- Chickens will be created dynamically -->
 
     <script>
+        // Load Telegram feed from JSON
+        async function loadTelegramFeed() {
+            const container = document.getElementById('telegram-posts');
+            try {
+                const response = await fetch('./posts.json');
+                const posts = await response.json();
+
+                if (posts.length === 0) {
+                    container.innerHTML = '<li>No posts yet</li>';
+                    return;
+                }
+
+                container.innerHTML = posts.map(post => {
+                    let html = `<li>
+                        <span class="post-time">${post.time || ''}</span>
+                        <div class="post-content">${post.html || post.text || ''}</div>`;
+
+                    if (post.images && post.images.length > 0) {
+                        html += '<div class="post-images">';
+                        post.images.forEach(img => {
+                            html += `<img src="${img}" alt="post image" loading="lazy">`;
+                        });
+                        html += '</div>';
+                    }
+
+                    if (post.document) {
+                        html += `<div class="post-document">[${post.document}]</div>`;
+                    }
+
+                    html += '</li>';
+                    return html;
+                }).join('');
+            } catch (error) {
+                container.innerHTML = '<li>Failed to load feed</li>';
+                console.error('Error loading feed:', error);
+            }
+        }
+
+        loadTelegramFeed();
+
         class Chicken {
             constructor(id) {
                 this.element = document.createElement('div');
@@ -265,8 +397,17 @@
                     idle: { frames: [0, 1], speed: 500 },
                     walking: { frames: [2, 3, 4, 5], speed: 150 },
                     pecking: { frames: [6, 7], speed: 300 },
-                    jumping: { frames: [8, 9], speed: 100 }
+                    jumping: { frames: [8, 9], speed: 100 },
+                    sitting: { frames: [10], speed: 1000 }
                 };
+
+                // Egg laying properties
+                this.isLayingEgg = false;
+                this.isSitting = false;
+                this.sittingEgg = null;
+                this.lastEggTime = 0;
+                this.eggLayingCooldown = 30000; // 30 seconds between eggs
+                this.isChick = false;
 
                 this.updatePosition();
                 this.setupEventListeners();
@@ -293,6 +434,13 @@
             }
 
             updateAnimation(deltaTime) {
+                // Don't update animation frames while sitting on egg - stay on sitting frame
+                if (this.isSitting && this.currentAnimation === 'sitting') {
+                    this.currentFrame = 10; // Force sitting frame
+                    this.updateSprite();
+                    return;
+                }
+
                 const anim = this.animations[this.currentAnimation];
                 this.frameTime += deltaTime;
 
@@ -312,11 +460,26 @@
                     return;
                 }
 
-                if (this.isPecking) return;
+                if (this.isPecking || this.isLayingEgg) return;
+
+                // If sitting on egg, don't move at all
+                if (this.isSitting) {
+                    this.setAnimation('sitting');
+                    return;
+                }
 
                 // Check for mouse following behavior
                 if (feedSystem.hasMouseFood()) {
                     this.checkMouseProximity();
+                }
+
+                // Check for nearby eggs to sit on
+                this.checkForEggsToSitOn();
+
+                // Random egg laying
+                if (!this.isChick && Math.random() < 0.0001 && (Date.now() - this.lastEggTime) > this.eggLayingCooldown) {
+                    this.layEgg();
+                    return;
                 }
 
                 // Handle feed targeting
@@ -561,6 +724,114 @@
                 }
             }
 
+            layEgg() {
+                this.isLayingEgg = true;
+
+                // Reset animation frame and time to ensure clean transition
+                this.currentFrame = 10; // Force to sitting frame (frame 11, index 10)
+                this.frameTime = 0;
+                this.setAnimation('sitting');
+                this.updateSprite(); // Immediately update sprite to sitting frame
+
+                this.lastEggTime = Date.now();
+
+                setTimeout(() => {
+                    // Create egg at chicken's position
+                    const egg = new Egg(this.x, this.y + 16, Date.now());
+                    eggs.push(egg);
+
+                    this.isLayingEgg = false;
+
+                    // Reset to idle animation properly
+                    this.currentFrame = 0;
+                    this.frameTime = 0;
+                    this.setAnimation('idle');
+
+                    // Give the chicken new velocities to start moving again
+                    this.velocityX = (Math.random() - 0.5) * 2;
+                    this.velocityY = (Math.random() - 0.5) * 2;
+                }, 1500); // Slightly longer for sitting pose
+            }
+
+            checkForEggsToSitOn() {
+                if (this.isChick) return;
+
+                const nearbyEgg = eggs.find(egg => {
+                    const distance = Math.sqrt(
+                        Math.pow(this.x - egg.x, 2) +
+                        Math.pow(this.y - egg.y, 2)
+                    );
+                    // Only sit on eggs that are in 'waiting' state (not hatching or hatched)
+                    return distance <= 30 &&
+                           egg.state === 'waiting' &&
+                           !egg.sittingChicken;
+                });
+
+                if (nearbyEgg && Math.random() < 0.01) {
+                    this.startSittingOnEgg(nearbyEgg);
+                }
+            }
+
+            startSittingOnEgg(egg) {
+                // Double-check egg is still available for sitting
+                if (egg.state !== 'waiting' || egg.sittingChicken) {
+                    return; // Don't sit if egg is already hatching or has another chicken
+                }
+
+                this.isSitting = true;
+                this.sittingEgg = egg;
+                this.setAnimation('sitting');
+                egg.startSitting(this);
+
+                // Position chicken on egg
+                this.x = egg.x;
+                this.y = egg.y - 8;
+                this.updatePosition();
+            }
+
+            stopSitting() {
+                this.isSitting = false;
+                this.sittingEgg = null;
+
+                // Reset animation frame and force back to normal behavior
+                this.currentFrame = 0;
+                this.frameTime = 0;
+                this.setAnimation('idle');
+
+                // Move chicken slightly away from egg
+                this.x += (Math.random() - 0.5) * 30;
+                this.y += (Math.random() - 0.5) * 30;
+
+                // Ensure position stays within bounds
+                this.x = Math.max(0, Math.min(window.innerWidth - 32, this.x));
+                this.y = Math.max(0, Math.min(window.innerHeight - 32, this.y));
+                this.updatePosition();
+
+                // Reset velocities to ensure they start moving again
+                this.velocityX = (Math.random() - 0.5) * 2;
+                this.velocityY = (Math.random() - 0.5) * 2;
+
+                // Force a small movement to break any potential stuck state
+                setTimeout(() => {
+                    if (!this.isSitting && !this.isLayingEgg && !this.isPecking) {
+                        this.x += this.velocityX * 5;
+                        this.y += this.velocityY * 5;
+                        this.updatePosition();
+                    }
+                }, 100);
+            }
+
+            updateSitting(deltaTime) {
+                if (this.isSitting && this.sittingEgg) {
+                    const shouldStop = this.sittingEgg.updateSitting(deltaTime);
+                    if (shouldStop) {
+                        this.stopSitting();
+                    }
+                    return shouldStop;
+                }
+                return false;
+            }
+
             setupEventListeners() {
                 this.element.addEventListener('mouseenter', () => {
                     this.jump();
@@ -581,12 +852,455 @@
                     lastTime = currentTime;
 
                     this.updateAnimation(deltaTime);
+                    this.updateSitting(deltaTime);
                     this.wander(deltaTime);
 
                     requestAnimationFrame(gameLoop);
                 };
 
                 requestAnimationFrame(gameLoop);
+            }
+        }
+
+        // Chick class - similar to Chicken but smaller and runs from mouse
+        class Chick extends Chicken {
+            constructor(id, parentChicken = null) {
+                super(id);
+
+                // Override element creation for chick
+                this.element.remove(); // Remove the chicken element
+                this.element = document.createElement('div');
+                this.element.className = 'chick';
+                this.element.id = 'chick-' + id;
+                document.body.appendChild(this.element);
+
+                // Chick-specific properties
+                this.isRunningAway = false;
+                this.runAwayTimer = 0;
+                this.originalSpeed = 1;
+                this.runAwaySpeed = 4;
+                this.parentChicken = parentChicken;
+                this.isChick = true;
+                this.followingParent = false;
+                this.isRiding = false;
+
+                // Override animations for chick sprite sheet
+                this.animations = {
+                    idle: { frames: [0, 1], speed: 500 },
+                    walking: { frames: [2, 3], speed: 150 },
+                    pecking: { frames: [4, 5], speed: 300 },
+                    running: { frames: [2, 3], speed: 100 }, // Fast walk animation for running
+                    riding: { frames: [1], speed: 1000 } // Frame 2 (index 1) for riding
+                };
+
+                this.updatePosition();
+                this.setupChickEventListeners();
+            }
+
+            updateSprite() {
+                const frameX = this.currentFrame * 16; // 16px per frame for chick
+                this.element.style.backgroundPosition = `-${frameX}px 0px`;
+                this.element.style.transform = this.facingRight ? 'scaleX(-1)' : 'scaleX(1)';
+            }
+
+            setupChickEventListeners() {
+                this.element.addEventListener('mouseenter', () => {
+                    if (this.isRiding) {
+                        this.stopRiding();
+                    } else {
+                        this.runAway();
+                    }
+                });
+
+                // Also listen for mouseover on parent chicken when riding
+                if (this.parentChicken && this.parentChicken.element) {
+                    this.parentChicken.element.addEventListener('mouseenter', () => {
+                        if (this.isRiding) {
+                            this.stopRiding();
+                        }
+                    });
+                }
+
+                window.addEventListener('resize', () => {
+                    this.x = Math.min(this.x, window.innerWidth - 16);
+                    this.y = Math.min(this.y, window.innerHeight - 16);
+                    this.updatePosition();
+                });
+
+                // Track mouse position for running away
+                document.addEventListener('mousemove', (e) => {
+                    if (this.isRunningAway) {
+                        this.checkMouseDistance(e.clientX, e.clientY);
+                    }
+                });
+            }
+
+            runAway() {
+                if (!this.isRunningAway) {
+                    this.isRunningAway = true;
+                    this.runAwayTimer = 0;
+                    this.isPecking = false;
+                    this.isIdling = false;
+                    this.targetFeed = null;
+                    this.followingMouse = false;
+                }
+            }
+
+            checkMouseDistance(mouseX, mouseY) {
+                const distance = Math.sqrt(
+                    Math.pow(this.x - mouseX, 2) +
+                    Math.pow(this.y - mouseY, 2)
+                );
+
+                if (distance > 100) { // Stop running when far enough
+                    this.isRunningAway = false;
+                    this.runAwayTimer = 0;
+                }
+            }
+
+            wander(deltaTime) {
+                if (this.isJumping) {
+                    this.updateJump(deltaTime);
+                    return;
+                }
+
+                if (this.isPecking) return;
+
+                // Handle running away behavior
+                if (this.isRunningAway) {
+                    this.runAwayTimer += deltaTime;
+                    this.runAwayFromMouse();
+
+                    // Stop running after 3 seconds max
+                    if (this.runAwayTimer >= 3000) {
+                        this.isRunningAway = false;
+                        this.runAwayTimer = 0;
+                    }
+                    return;
+                }
+
+                // Check if parent is still alive and follow them
+                if (this.parentChicken && chickens.includes(this.parentChicken) && !this.parentChicken.isChick) {
+                    // Ensure parent reference is valid
+                    if (!this.parentChicken.element || !this.parentChicken.element.parentNode) {
+                        this.parentChicken = null;
+                        return;
+                    }
+
+                    // Don't interfere with parent if they're sitting on an egg
+                    if (this.parentChicken.isSitting) {
+                        // Stay nearby but don't follow actively to avoid disrupting sitting behavior
+                        const distance = Math.sqrt(
+                            Math.pow(this.parentChicken.x - this.x, 2) +
+                            Math.pow(this.parentChicken.y - this.y, 2)
+                        );
+
+                        if (distance > 60) {
+                            // Move toward sitting parent but stop before getting too close
+                            const dx = this.parentChicken.x - this.x;
+                            const dy = this.parentChicken.y - this.y;
+                            const targetDistance = 50; // Stop at comfortable distance
+
+                            if (distance > targetDistance) {
+                                this.velocityX = (dx / distance) * 1.0;
+                                this.velocityY = (dy / distance) * 1.0;
+                                this.x += this.velocityX;
+                                this.y += this.velocityY;
+                                this.facingRight = this.velocityX > 0;
+                                this.setAnimation('walking');
+                                this.updatePosition();
+                                return;
+                            }
+                        }
+
+                        // Close enough to sitting parent - just idle nearby
+                        this.setAnimation('idle');
+                        return;
+                    }
+
+                    const distance = Math.sqrt(
+                        Math.pow(this.parentChicken.x - this.x, 2) +
+                        Math.pow(this.parentChicken.y - this.y, 2)
+                    );
+
+                    // Check if should start riding (less frequent)
+                    if (!this.isRiding && distance <= 15 && Math.random() < 0.003) {
+                        this.startRiding();
+                        return;
+                    }
+
+                    // If riding, stay on parent's back
+                    if (this.isRiding) {
+                        this.rideParent();
+                        return;
+                    }
+
+                    // Follow if too far from parent
+                    if (distance > 80) { // Even more wandering room
+                        this.followParent();
+                        return;
+                    }
+
+                    // If moderately close to parent, allow some wandering
+                    if (distance > 45) {
+                        if (Math.random() < 0.1) { // 10% chance to follow, 90% to wander
+                            this.followParent();
+                            return;
+                        }
+                    }
+
+                    // Close to parent - continue with normal wandering behavior
+                    // This allows chicks to explore around their parent
+                }
+
+                // Use parent wander logic for normal behavior
+                super.wander(deltaTime);
+            }
+
+            runAwayFromMouse() {
+                const mousePos = feedSystem.getMousePosition();
+                const dx = this.x - mousePos.x;
+                const dy = this.y - mousePos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 0) {
+                    // Run in opposite direction from mouse
+                    this.velocityX = (dx / distance) * this.runAwaySpeed;
+                    this.velocityY = (dy / distance) * this.runAwaySpeed;
+
+                    // Update facing direction
+                    this.facingRight = this.velocityX > 0;
+
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+
+                    // Boundary collision
+                    if (this.x <= 0 || this.x >= window.innerWidth - 16) {
+                        this.velocityX = -this.velocityX;
+                        this.x = Math.max(0, Math.min(window.innerWidth - 16, this.x));
+                    }
+                    if (this.y <= 0 || this.y >= window.innerHeight - 16) {
+                        this.velocityY = -this.velocityY;
+                        this.y = Math.max(0, Math.min(window.innerHeight - 16, this.y));
+                    }
+
+                    this.setAnimation('running');
+                    this.updatePosition();
+                }
+            }
+
+            followParent() {
+                if (!this.parentChicken) return;
+
+                const dx = this.parentChicken.x - this.x;
+                const dy = this.parentChicken.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 40) { // More following distance
+                    this.velocityX = (dx / distance) * 1.8;
+                    this.velocityY = (dy / distance) * 1.8;
+
+                    // Update facing direction
+                    this.facingRight = this.velocityX > 0;
+
+                    this.x += this.velocityX;
+                    this.y += this.velocityY;
+
+                    // Boundary collision
+                    if (this.x <= 0 || this.x >= window.innerWidth - 16) {
+                        this.velocityX = -this.velocityX;
+                        this.x = Math.max(0, Math.min(window.innerWidth - 16, this.x));
+                    }
+                    if (this.y <= 0 || this.y >= window.innerHeight - 16) {
+                        this.velocityY = -this.velocityY;
+                        this.y = Math.max(0, Math.min(window.innerHeight - 16, this.y));
+                    }
+
+                    this.setAnimation('walking');
+                    this.updatePosition();
+                } else {
+                    // Close enough to parent, just idle
+                    this.setAnimation('idle');
+                }
+            }
+
+            startRiding() {
+                this.isRiding = true;
+                this.setAnimation('riding');
+                // Random chance to stop riding after shorter time
+                setTimeout(() => {
+                    if (this.isRiding && Math.random() < 0.8) {
+                        this.stopRiding();
+                    }
+                }, 1500 + Math.random() * 2000); // 1.5-3.5 seconds
+            }
+
+            stopRiding() {
+                this.isRiding = false;
+                // Move slightly off the parent's back
+                this.x += (Math.random() - 0.5) * 20;
+                this.y += (Math.random() - 0.5) * 20;
+                this.updatePosition();
+                this.setAnimation('idle');
+            }
+
+            rideParent() {
+                if (!this.parentChicken) {
+                    this.stopRiding();
+                    return;
+                }
+
+                // Position chick on parent's back (more centered and lower)
+                this.x = this.parentChicken.x + 2; // Slightly toward center
+                this.y = this.parentChicken.y - 8; // Lower on the back
+
+                // Face same direction as parent
+                this.facingRight = this.parentChicken.facingRight;
+
+                this.updatePosition();
+                this.setAnimation('riding');
+
+                // Small chance to get off while riding
+                if (Math.random() < 0.002) {
+                    this.stopRiding();
+                }
+            }
+        }
+
+        // Egg class for hatching system
+        class Egg {
+            constructor(x, y, id) {
+                this.x = x;
+                this.y = y;
+                this.id = id;
+                this.element = document.createElement('div');
+                this.element.className = 'egg';
+                this.element.id = 'egg-' + id;
+                this.element.style.left = this.x + 'px';
+                this.element.style.top = this.y + 'px';
+                document.body.appendChild(this.element);
+
+                this.currentFrame = 0;
+                this.frameTime = 0;
+                this.state = 'waiting'; // waiting, hatching, hatched
+                this.sittingChicken = null;
+                this.sittingTime = 0;
+                this.sittingRequired = 10000; // 10 seconds
+
+                this.updateSprite();
+            }
+
+            updateSprite() {
+                const frameX = this.currentFrame * 16;
+                this.element.style.backgroundPosition = `-${frameX}px 0px`;
+            }
+
+            startSitting(chicken) {
+                if (this.state === 'waiting' && !this.sittingChicken) {
+                    this.sittingChicken = chicken;
+                    this.parentChickenRef = chicken; // Store reference for later
+                    this.sittingTime = 0;
+                }
+            }
+
+            updateSitting(deltaTime) {
+                if (this.sittingChicken && this.state === 'waiting') {
+                    this.sittingTime += deltaTime;
+
+                    if (this.sittingTime >= this.sittingRequired) {
+                        // Immediately free the chicken before starting hatching
+                        const parentChicken = this.sittingChicken;
+                        this.sittingChicken = null;
+
+                        if (parentChicken) {
+                            parentChicken.stopSitting();
+                        }
+
+                        // Wait 2 seconds for chicken to move away before hatching
+                        setTimeout(() => {
+                            this.startHatching();
+                        }, 2000);
+
+                        return true; // Chicken can leave
+                    }
+                }
+                return false;
+            }
+
+            startHatching() {
+                this.state = 'hatching';
+                this.currentFrame = 1;
+                this.frameTime = 0;
+                // sittingChicken should already be null from updateSitting()
+
+                this.animateHatching();
+            }
+
+            animateHatching() {
+                const hatchingFrames = [1, 2, 3, 4]; // hatching, chick peeking, chick popping, empty shell
+                let frameIndex = 0;
+
+                const animate = () => {
+                    if (frameIndex < hatchingFrames.length - 1) {
+                        this.currentFrame = hatchingFrames[frameIndex];
+                        this.updateSprite();
+                        frameIndex++;
+                        setTimeout(animate, 800); // 800ms per frame
+                    } else if (frameIndex === hatchingFrames.length - 1) {
+                        // Create chick before showing empty shell
+                        this.hatch();
+                        // Show empty shell
+                        this.currentFrame = hatchingFrames[frameIndex];
+                        this.updateSprite();
+                        // Remove shell after 2 seconds
+                        setTimeout(() => {
+                            this.element.remove();
+                            eggs = eggs.filter(e => e.id !== this.id);
+                        }, 2000);
+                    }
+                };
+
+                animate();
+            }
+
+            hatch() {
+                this.state = 'hatched';
+
+                // Use stored parent reference first, then fallback to nearby search
+                let parentChicken = this.parentChickenRef;
+                if (!parentChicken || !chickens.includes(parentChicken)) {
+                    parentChicken = this.findParentChicken();
+                }
+
+                const chick = new Chick(Date.now(), parentChicken);
+                chick.x = this.x + (Math.random() - 0.5) * 10; // Slight random offset
+                chick.y = this.y + (Math.random() - 0.5) * 10;
+
+                // Ensure chick has initial velocities
+                chick.velocityX = (Math.random() - 0.5) * 1.5;
+                chick.velocityY = (Math.random() - 0.5) * 1.5;
+
+                chick.updatePosition();
+
+                // Add to chickens array
+                chickens.push(chick);
+
+                // Don't remove egg here - it will be removed after showing empty shell
+            }
+
+            findParentChicken() {
+                // Find the chicken that was sitting on this egg
+                // Look for adult chickens near the egg location
+                return chickens.find(chicken =>
+                    chicken instanceof Chicken &&
+                    !chicken.isChick &&
+                    chicken.constructor.name === 'Chicken' && // Make sure it's not a Chick instance
+                    Math.sqrt(Math.pow(chicken.x - this.x, 2) + Math.pow(chicken.y - this.y, 2)) < 80
+                );
+            }
+
+            remove() {
+                this.element.remove();
             }
         }
 
@@ -708,11 +1422,15 @@
         // Create feed system
         const feedSystem = new FeedSystem();
 
-        // Create 20 chickens
+        // Create arrays for chickens and eggs
         const chickens = [];
+        const eggs = [];
+
+        // Create 20 chickens
         for (let i = 0; i < 20; i++) {
             chickens.push(new Chicken(i));
         }
+
     </script>
 </body>
 </html>
