@@ -1,0 +1,273 @@
+/* CSS Variables */
+:root {
+    --color-white: #ffffff;
+    --color-white-transparent: rgba(255, 255, 255, 0.9);
+    --color-border: #ccc;
+    --color-border-dotted: #ccc;
+    --color-text-muted: #666;
+    --color-link: #0000EE;
+    --color-link-visited: #551A8B;
+    --color-brown: #8B4513;
+    --color-brown-dark: #654321;
+    --color-brown-bg: rgba(139, 69, 19, 0.1);
+    --color-brown-bg-hover: rgba(139, 69, 19, 0.2);
+
+    --spacing-sm: 5px;
+    --spacing-md: 10px;
+    --spacing-lg: 20px;
+
+    --font-size-sm: 12px;
+    --font-size-md: 14px;
+    --font-size-lg: 16px;
+
+    --z-farm-building: 500;
+    --z-feed: 998;
+    --z-chicken: 999;
+    --z-panel: 1000;
+    --z-feed-bag: 1001;
+    --z-mouse-feed: 1002;
+}
+
+/* Base */
+body {
+    margin: 0;
+    padding: var(--spacing-lg);
+    background: var(--color-white);
+    font-family: monospace;
+    font-size: var(--font-size-md);
+}
+
+/* Shared Panel Styles */
+.panel {
+    position: fixed;
+    z-index: var(--z-panel);
+    background: var(--color-white-transparent);
+    padding: var(--spacing-md);
+    border: 1px solid var(--color-border);
+}
+
+.panel h2 {
+    margin: 0 0 var(--spacing-md) 0;
+    font-size: var(--font-size-lg);
+}
+
+.panel ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.panel li {
+    margin: var(--spacing-sm) 0;
+}
+
+.panel a {
+    color: var(--color-link);
+    text-decoration: underline;
+}
+
+.panel a:visited {
+    color: var(--color-link-visited);
+}
+
+/* Links Section */
+.links-section {
+    top: var(--spacing-lg);
+    left: var(--spacing-lg);
+}
+
+/* Telegram Feed */
+.telegram-feed {
+    bottom: var(--spacing-lg);
+    right: 100px;
+    max-height: 200px;
+    max-width: 350px;
+    overflow-y: auto;
+}
+
+.telegram-feed li {
+    margin: 8px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px dotted var(--color-border-dotted);
+}
+
+.telegram-feed li:last-child {
+    border-bottom: none;
+}
+
+.telegram-feed .post-time {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+}
+
+.telegram-feed .post-content {
+    margin-top: 4px;
+}
+
+.telegram-feed .post-images {
+    margin-top: 6px;
+}
+
+.telegram-feed .post-images img {
+    max-width: 100%;
+    max-height: 150px;
+    margin: 2px;
+    border: 1px solid #ddd;
+}
+
+/* Sprite Base */
+.sprite {
+    position: absolute;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+}
+
+/* Chicken */
+.chicken {
+    width: 32px;
+    height: 32px;
+    background-image: url('../assets/chicken.PNG');
+    z-index: var(--z-chicken);
+}
+
+/* Chick */
+.chick {
+    width: 16px;
+    height: 16px;
+    background-image: url('../assets/chick.PNG');
+    background-position: 0px 0px;
+    z-index: var(--z-chicken);
+}
+
+/* Egg */
+.egg {
+    width: 16px;
+    height: 16px;
+    background-image: url('../assets/egg.PNG');
+    background-position: 0px 0px;
+    z-index: var(--z-feed);
+}
+
+/* Feed */
+.feed {
+    width: 16px;
+    height: 16px;
+    background-image: url('../assets/feed.PNG');
+    background-position: 0px 0px;
+    z-index: var(--z-feed);
+}
+
+.mouse-feed {
+    position: fixed;
+    width: 16px;
+    height: 16px;
+    background-image: url('../assets/feed.PNG');
+    background-repeat: no-repeat;
+    background-position: 0px 0px;
+    image-rendering: pixelated;
+    z-index: var(--z-mouse-feed);
+    pointer-events: none;
+    display: none;
+}
+
+/* Feed Bag */
+#feed-bag {
+    position: fixed;
+    top: 50%;
+    right: var(--spacing-lg);
+    width: 64px;
+    height: 64px;
+    background-image: url('../assets/feed-bag.PNG');
+    background-size: contain;
+    background-repeat: no-repeat;
+    image-rendering: pixelated;
+    cursor: pointer;
+    z-index: var(--z-feed-bag);
+    transform: translateY(-50%);
+}
+
+#feed-bag:hover {
+    filter: brightness(1.2);
+}
+
+/* Farm Buildings */
+.farm-building {
+    position: absolute;
+    border: 2px dashed var(--color-brown);
+    background: var(--color-brown-bg);
+    padding: 15px;
+    box-sizing: border-box;
+    font-family: monospace;
+    z-index: var(--z-farm-building);
+    text-decoration: none;
+    display: block;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.farm-building:hover {
+    background: var(--color-brown-bg-hover);
+    border-color: var(--color-brown-dark);
+    transform: scale(1.05);
+}
+
+.farm-building h3 {
+    margin: 0 0 var(--spacing-sm) 0;
+    font-size: var(--font-size-md);
+    color: var(--color-brown);
+    font-weight: bold;
+}
+
+.farm-building p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
+
+.farm-building.coming-soon {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.farm-building.coming-soon:hover {
+    transform: none;
+    background: var(--color-brown-bg);
+}
+
+/* Farm Building Positions */
+#farmhouse {
+    top: 50px;
+    left: 50%;
+    margin-left: -90px;
+    width: 180px;
+    height: 120px;
+}
+
+#chicken-coop {
+    top: 250px;
+    left: 280px;
+    width: 150px;
+    height: 100px;
+}
+
+#workshop {
+    top: 200px;
+    right: 100px;
+    width: 160px;
+    height: 100px;
+}
+
+#garden {
+    bottom: 100px;
+    left: 100px;
+    width: 170px;
+    height: 120px;
+}
+
+#farm-stand {
+    bottom: 100px;
+    right: 100px;
+    width: 150px;
+    height: 100px;
+}
