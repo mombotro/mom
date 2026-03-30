@@ -117,7 +117,7 @@ class Chicken {
     }
 
     updateAnimation(deltaTime) {
-        if (this.isSitting && this.currentAnimation === 'sitting') {
+        if (this.isSitting) {
             this.currentFrame = 10;
             this.updateSprite();
             return;
@@ -154,6 +154,7 @@ class Chicken {
         }
 
         this.checkForEggsToSitOn();
+        if (this.isSitting) return;
 
         if (!this.isChick && Math.random() < CHICKEN_CONFIG.eggLayChance &&
             (Date.now() - this.lastEggTime) > this.eggLayingCooldown) {
@@ -171,9 +172,7 @@ class Chicken {
             return;
         }
 
-        if (!this.targetFeed) {
-            this.checkForNearbyFeed();
-        }
+        this.checkForNearbyFeed();
 
         if (this.isIdling) {
             this.idleTimer += deltaTime;
@@ -397,11 +396,13 @@ class Chicken {
             window.eggs.push(egg);
 
             this.isLayingEgg = false;
-            this.currentFrame = 0;
-            this.frameTime = 0;
-            this.setAnimation('idle');
-            this.velocityX = (Math.random() - 0.5) * CHICKEN_CONFIG.maxVelocity;
-            this.velocityY = (Math.random() - 0.5) * CHICKEN_CONFIG.maxVelocity;
+            if (!this.isSitting) {
+                this.currentFrame = 0;
+                this.frameTime = 0;
+                this.setAnimation('idle');
+                this.velocityX = (Math.random() - 0.5) * CHICKEN_CONFIG.maxVelocity;
+                this.velocityY = (Math.random() - 0.5) * CHICKEN_CONFIG.maxVelocity;
+            }
         }, 1500);
     }
 

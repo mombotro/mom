@@ -48,12 +48,7 @@ class Egg {
             this.sittingTime += deltaTime;
 
             if (this.sittingTime >= this.sittingRequired) {
-                const parentChicken = this.sittingChicken;
                 this.sittingChicken = null;
-
-                if (parentChicken) {
-                    parentChicken.stopSitting();
-                }
 
                 setTimeout(() => {
                     this.startHatching();
@@ -66,6 +61,10 @@ class Egg {
     }
 
     startHatching() {
+        if (this.sittingChicken) {
+            this.sittingChicken.stopSitting();
+            this.sittingChicken = null;
+        }
         this.state = 'hatching';
         this.currentFrame = 1;
         this.frameTime = 0;
